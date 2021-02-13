@@ -1,73 +1,44 @@
-var dragSrcEl = null;
+const draggables = document.querySelectorAll(".draggable");
+const containers = document.querySelectorAll(".container");
 
-function handleDragStart(e) {
-  // Target (this) element is the source node.
-  dragSrcEl = this;
+draggables.forEach((draggable) => {
+  draggable.addEventListener("dragstart", () => {
+    draggable.classList.add("dragging");
+  });
 
-  e.dataTransfer.effectAllowed = "move";
-  e.dataTransfer.setData("text/html", this.outerHTML);
+  draggable.addEventListener("dragend", () => {
+    draggable.classList.remove("dragging");
+  });
+});
 
-  this.classList.add("dragElem");
+containers.forEach((container) => {
+  container.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(container, e.clientY);
+    const draggable = document.querySelector(".dragging");
+    if (afterElement == null) {
+      container.appendChild(draggable);
+    } else {
+      container.insertBefore(draggable, afterElement);
+    }
+  });
+});
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [
+    ...container.querySelectorAll(".draggable:not(.dragging)"),
+  ];
+
+  return draggableElements.reduce(
+    (closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    },
+    { offset: Number.NEGATIVE_INFINITY }
+  ).element;
 }
-function handleDragOver(e) {
-  if (e.preventDefault) {
-    e.preventDefault(); // Necessary. Allows us to drop.
-  }
-  this.classList.add("over");
-
-  e.dataTransfer.dropEffect = "move"; // See the section on the DataTransfer object.
-
-  return false;
-}
-
-function handleDragEnter(e) {
-  // this / e.target is the current hover target.
-}
-
-function handleDragLeave(e) {
-  this.classList.remove("over"); // this / e.target is previous target element.
-}
-
-function handleDrop(e) {
-  // this/e.target is current target element.
-
-  if (e.stopPropagation) {
-    e.stopPropagation(); // Stops some browsers from redirecting.
-  }
-
-  // Don't do anything if dropping the same column we're dragging.
-  if (dragSrcEl != this) {
-    // Set the source column's HTML to the HTML of the column we dropped on.
-    //alert(this.outerHTML);
-    //dragSrcEl.innerHTML = this.innerHTML;
-    //this.innerHTML = e.dataTransfer.getData('text/html');
-    this.parentNode.removeChild(dragSrcEl);
-    var dropHTML = e.dataTransfer.getData("text/html");
-    this.insertAdjacentHTML("beforebegin", dropHTML);
-    var dropElem = this.previousSibling;
-    addDnDHandlers(dropElem);
-  }
-  this.classList.remove("over");
-  return false;
-}
-
-function handleDragEnd(e) {
-  // this/e.target is the source node.
-  this.classList.remove("over");
-
-  /*[].forEach.call(cols, function (col) {
-    col.classList.remove('over');
-  });*/
-}
-
-function addDnDHandlers(elem) {
-  elem.addEventListener("dragstart", handleDragStart, false);
-  elem.addEventListener("dragenter", handleDragEnter, false);
-  elem.addEventListener("dragover", handleDragOver, false);
-  elem.addEventListener("dragleave", handleDragLeave, false);
-  elem.addEventListener("drop", handleDrop, false);
-  elem.addEventListener("dragend", handleDragEnd, false);
-}
-
-var cols = document.querySelectorAll("#columns .column");
-[].forEach.call(cols, addDnDHandlers);
