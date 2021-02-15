@@ -15,7 +15,7 @@ body {
 
 .words {
   display: block;
-  border: 2px solid blue;
+  border: 10px solid blue;
 }
 
 .small.container {
